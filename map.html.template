@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Church Sites</title>
+    <style>
+      #map {
+        width: 100%;
+        height: 400px;
+      }
+    </style>
+    <script id="churches">{{churches}}</script>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Church Sites</h1>
+      <div id="map"></div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Address</th>
+            <th>Size</th>
+            <th>Price</th>
+          </tr>
+        </thead>
+        <tbody id="churches-tbody">
+        </tbody>
+      </table>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&callback=initMap&v=weekly" defer></script>
+    <script>
+      const churches = JSON.parse(document.getElementById("churches").text);
+
+      function drawTable() {
+        const tbody = document.getElementById("churches-tbody");
+        let trs = '';
+        for (const ch of churches) {
+          trs += "<tr><td>" + ch.address + "</td><td>" + ch.size + "</td><td>" + ch.price + "</td></tr>";
+        }
+        tbody.innerHTML = trs;
+      }
+      drawTable();
+
+      const stJohns = { lng: -122.82605, lat: 45.51339 };
+
+      function initMap() {
+        const map = new google.maps.Map(document.getElementById("map"), {
+          zoom: 10,
+          center: stJohns,
+        });
+        const marker = new google.maps.Marker({
+          position: stJohns,
+          map: map
+        });
+        const geocoder = new google.maps.Geocoder();
+        for (const ch of churches) {
+          geocoder.geocode({'address': ch.address}, function(results, status) {
+            if (status == 'OK') {
+              const latlong = {
+                lat: results[0].geometry.location.lat(),
+                lng: results[0].geometry.location.lng()
+              };
+              new google.maps.Marker({
+                position: latlong,
+                map: map,
+              });
+            } else {
+              console.log("Geocoding failed for " + ch.address + ": " + status);
+            }
+          });
+        }
+      }
+      window.initMap = initMap;
+    </script>
+  </body>
+</html>
+

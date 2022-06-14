@@ -1,0 +1,9 @@
+# secrets
+/.env
+/families.csv
+
+# built files
+/map.html
+
+# temp files
+.~lock.*#
