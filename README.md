@@ -21,7 +21,8 @@ TODO
 + Add `.env`.
 + Encrypt `families.csv`.
 + Add a Makefile.
-- Geocode all the addresses and store the latlong in the database.
++ Geocode families and store the lonlat in the database.
+- Geocode churches and store the lonlat in the database.
 - Add a drive time table and compute the driving time.
 - Enter all the church addresses.
 - Add an html table with driving time statistics for each church:
