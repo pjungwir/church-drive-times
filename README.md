@@ -22,9 +22,23 @@ TODO
 + Encrypt `families.csv`.
 + Add a Makefile.
 + Geocode families and store the lonlat in the database.
-- Geocode churches and store the lonlat in the database.
++ Geocode churches and store the lonlat in the database.
++ Get `place_id` for each family & church and store them in the database.
+  We can pass these to the distancematrix api instead of lonlat (since it is preferred),
+  and also we can send them to the places api to get extra info like a tidied-up address, and other interesting things.
++ Enter all the church addresses.
 - Add a drive time table and compute the driving time.
-- Enter all the church addresses.
+  + find optimal origin/destination size.
+  + ask google for trip times.
+  + save trip times to database.
+  - check for OK status
+  - don't ask for families/churches we already know about, unless you pass a `force` option.
+  - fix minutes-vs-seconds for trip time: our db column is named minutes but Google gives us seconds.
+  - write some tests?
+  - improve how the db stores day-of-week and time-of-day:
+    - store day-of-week as an integer?
+    - maybe just store a single column with a full timestamp, especially since that's what we ask Google for?
+      - I think I like this approach the best. The frontend can always treat it as a representative and just use dow and time.
 - Add an html table with driving time statistics for each church:
   - mean driving time
   - median driving time
