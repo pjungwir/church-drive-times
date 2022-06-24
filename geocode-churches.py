@@ -18,7 +18,7 @@ url = "https://maps.googleapis.com/maps/api/place/findplacefromtext/json"
 
 with psycopg2.connect(database_url) as conn:
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-        cur.execute("SELECT * FROM churches WHERE latitude IS NULL OR longitude IS NULL")
+        cur.execute("SELECT * FROM churches WHERE latitude IS NULL OR longitude IS NULL OR place_id IS NULL")
         for church in cur.fetchall():
             params = {
                 'input':     f"{church['address']}, {church['city']}, {church['state']} {church['zip']}",
@@ -38,8 +38,9 @@ with psycopg2.connect(database_url) as conn:
 
                 result = result['candidates'][0]
                 lonlat = result['geometry']['location']
-                cur.execute("UPDATE churches SET latitude = %s, longitude = %s WHERE id = %s",
-                    (lonlat['lat'], lonlat['lng'], church['id']))
+                place_id = result['place_id']
+                cur.execute("UPDATE churches SET latitude = %s, longitude = %s, place_id = %s WHERE id = %s",
+                    (lonlat['lat'], lonlat['lng'], place_id, church['id']))
             else:
                 raise Exception(f"Geocoding failed for {church}")
         conn.commit()

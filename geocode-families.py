@@ -18,12 +18,12 @@ url = "https://maps.googleapis.com/maps/api/place/findplacefromtext/json"
 
 with psycopg2.connect(database_url) as conn:
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-        cur.execute("SELECT * FROM families WHERE latitude IS NULL OR longitude IS NULL")
+        cur.execute("SELECT * FROM families WHERE latitude IS NULL OR longitude IS NULL OR place_id IS NULL")
         for family in cur.fetchall():
             params = {
                 'input':     f"{family['address']}, {family['city']}, {family['state']} {family['zip']}",
                 'inputtype': 'textquery',
-                'fields':    'formatted_address,name,geometry',
+                'fields':    'formatted_address,name,geometry,place_id',
                 'key':       api_key,
             }
             resp = requests.get(url, params=params)
@@ -38,8 +38,9 @@ with psycopg2.connect(database_url) as conn:
 
                 result = result['candidates'][0]
                 lonlat = result['geometry']['location']
-                cur.execute("UPDATE families SET latitude = %s, longitude = %s WHERE id = %s",
-                    (lonlat['lat'], lonlat['lng'], family['id']))
+                place_id = result['place_id']
+                cur.execute("UPDATE families SET latitude = %s, longitude = %s, place_id = %s WHERE id = %s",
+                    (lonlat['lat'], lonlat['lng'], place_id, family['id']))
             else:
                 raise Exception(f"Geocoding failed for {family}")
         conn.commit()
