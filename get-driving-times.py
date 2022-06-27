@@ -114,14 +114,35 @@ def save_trip_times(cur, t, churches, families, result):
             el = result['rows'][i]['elements'][j]
 
             # TODO: Make sure the status is OK.
-            cur.execute("INSERT INTO trips (family_id, church_id, day_of_week, time_of_day, minutes) VALUES (%s, %s, %s, %s, %s)",
-                (f['id'], ch['id'], time.strftime("%A", t), time.strftime("%H:%M", t), el['duration']['value']))
+            cur.execute("INSERT INTO trips (family_id, church_id, arrival_time, seconds) VALUES (%s, %s, %s, %s)",
+                (f['id'], ch['id'], t, el['duration']['value']))
 
 with psycopg2.connect(database_url) as conn:
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-        cur.execute("SELECT * FROM families WHERE place_id IS NOT NULL")
+        # Get all families that are missing a time for any church:
+        # all families except those that have times for all churches.
+        cur.execute("""
+          SELECT  DISTINCT f.*
+          FROM    families f
+          CROSS JOIN churches ch
+          LEFT OUTER JOIN trips t
+          ON      t.church_id = ch.id
+          AND     t.family_id = f.id
+          WHERE   f.place_id IS NOT NULL
+          AND     t.church_id IS NULL
+        """)
         families = cur.fetchall()
-        cur.execute("SELECT * FROM churches WHERE place_id IS NOT NULL")
+        # Get all churches that are missing a time for any family:
+        cur.execute("""
+          SELECT  DISTINCT ch.*
+          FROM    churches ch
+          CROSS JOIN families f
+          LEFT OUTER JOIN trips t
+          ON      t.church_id = ch.id
+          AND     t.family_id = f.id
+          WHERE   ch.place_id IS NOT NULL
+          AND     t.family_id IS NULL
+        """)
         churches = cur.fetchall()
 
         # Choose the optimal number of churches & families to query at a time,
