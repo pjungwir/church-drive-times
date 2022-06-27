@@ -1,24 +1,30 @@
 #!/usr/bin/env python3.8
 
+import os
 import json
+import psycopg2
+import psycopg2.extras
 
-# TODO: geocode on the server so we only do it once, not in the browser.
-# TODO: in that case, maybe we should start putting these addresses into a database. <- MONDAY
-churches = [
-    ('5529 NE Century Blvd', '5.32', ''),
-    ('NE Belknap Court, Hillsboro, OR 97124', '3.9', '$2,050,000'),
-    ('6220 NE Pubols St., Hillsboro, OR 97124', '5.01', '')
-]
-churches = [
-    { 'address': c[0], 'size': c[1], 'price': c[2] } for c in churches
-]
+database_url = os.environ.get("DATABASE_URL", None)
+if database_url is None:
+    raise Exception("DATABASE_URL envvar must be set")
 
-families = [
-]
+with psycopg2.connect(database_url) as conn:
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+        cur.execute("SELECT address, size, price, longitude, latitude FROM churches WHERE longitude IS NOT NULL AND latitude IS NOT NULL")
+        churches = [
+            {
+                **ch,
+                'price': (float(ch['price']) if ch['price'] is not None else None),
+            }
+            for ch
+            in cur.fetchall()
+        ]
 
-with open("map.html.template") as f:
-    template = f.read()
 
-html = template.replace("{{churches}}", json.dumps(churches))
+        with open("map.html.template") as f:
+            template = f.read()
 
-print(html)
+        html = template.replace("{{churches}}", json.dumps(churches))
+
+        print(html)

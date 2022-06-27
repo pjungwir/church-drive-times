@@ -51,25 +51,10 @@
           zoom: 10,
           center: stJohns,
         });
-        const marker = new google.maps.Marker({
-          position: stJohns,
-          map: map
-        });
-        const geocoder = new google.maps.Geocoder();
         for (const ch of churches) {
-          geocoder.geocode({'address': ch.address}, function(results, status) {
-            if (status == 'OK') {
-              const latlong = {
-                lat: results[0].geometry.location.lat(),
-                lng: results[0].geometry.location.lng()
-              };
-              new google.maps.Marker({
-                position: latlong,
-                map: map,
-              });
-            } else {
-              console.log("Geocoding failed for " + ch.address + ": " + status);
-            }
+          new google.maps.Marker({
+            position: { lng: ch.longitude, lat: ch.latitude },
+            map: map,
           });
         }
       }
