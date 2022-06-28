@@ -115,65 +115,75 @@ def save_trip_times(cur, t, churches, families, result):
 
             # TODO: Make sure the status is OK.
             cur.execute("INSERT INTO trips (family_id, church_id, arrival_time, seconds) VALUES (%s, %s, %s, %s)",
-                (f['id'], ch['id'], t, el['duration']['value']))
+                (f['id'], ch['id'], time.strftime("%Y-%m-%d %H:%M:%S %Z", t), el['duration']['value']))
 
 with psycopg2.connect(database_url) as conn:
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-        # Get all families that are missing a time for any church:
-        # all families except those that have times for all churches.
-        cur.execute("""
-          SELECT  DISTINCT f.*
-          FROM    families f
-          CROSS JOIN churches ch
-          LEFT OUTER JOIN trips t
-          ON      t.church_id = ch.id
-          AND     t.family_id = f.id
-          WHERE   f.place_id IS NOT NULL
-          AND     t.church_id IS NULL
-        """)
-        families = cur.fetchall()
-        # Get all churches that are missing a time for any family:
-        cur.execute("""
-          SELECT  DISTINCT ch.*
-          FROM    churches ch
-          CROSS JOIN families f
-          LEFT OUTER JOIN trips t
-          ON      t.church_id = ch.id
-          AND     t.family_id = f.id
-          WHERE   ch.place_id IS NOT NULL
-          AND     t.family_id IS NULL
-        """)
-        churches = cur.fetchall()
+        # Sunday morning, Saturday vespers, Friday evening:
+        for arrival_time in ["June 19, 2022 10:00 PDT", "July 2, 2022 18:30 PDT", "July 1, 2022 19:00 PDT"]:
+            t = time.strptime(arrival_time, "%B %d, %Y %H:%M %Z")
 
-        # Choose the optimal number of churches & families to query at a time,
-        # minimize the API calls:
-        c, f = choose_best_churches_per_call(len(churches), len(families))
-        
-        church_groups = math.ceil(len(churches) / c)
-        family_groups = math.ceil(len(families) / f)
+            # Get all families that are missing a time for any church:
+            # all families except those that have times for all churches.
+            cur.execute("""
+              SELECT  DISTINCT f.*
+              FROM    families f
+              CROSS JOIN churches ch
+              LEFT OUTER JOIN trips t
+              ON      t.church_id = ch.id
+              AND     t.family_id = f.id
+              AND     t.arrival_time = %s
+              WHERE   f.place_id IS NOT NULL
+              AND     ch.place_id IS NOT NULL
+              AND     t.church_id IS NULL
+            """, (arrival_time,))
+            families = cur.fetchall()
+            # Get all churches that are missing a time for any family:
+            cur.execute("""
+              SELECT  DISTINCT ch.*
+              FROM    churches ch
+              CROSS JOIN families f
+              LEFT OUTER JOIN trips t
+              ON      t.church_id = ch.id
+              AND     t.family_id = f.id
+              AND     t.arrival_time = %s
+              WHERE   ch.place_id IS NOT NULL
+              AND     f.place_id IS NOT NULL
+              AND     t.family_id IS NULL
+            """, (arrival_time,))
+            churches = cur.fetchall()
 
-        t = time.strptime("June 19, 2022 10:00 PDT", "%B %d, %Y %H:%M %Z")
+            if len(churches) == 0 or len(families) == 0:
+                print(f"No churches or families need to timing for {arrival_time}. Skipping....")
+                continue
 
-        for i in range(0, church_groups):
-            sub_churches = churches[i*c : i*c + c]
-            for j in range(0, family_groups):
-                sub_families = families[j*f : j*f + f]
+            # Choose the optimal number of churches & families to query at a time,
+            # minimize the API calls:
+            c, f = choose_best_churches_per_call(len(churches), len(families))
 
-                params = {
-                    'origins':      '|'.join([f"place_id:{family['place_id']}" for family in sub_families]),
-                    'destinations': '|'.join([f"place_id:{church['place_id']}" for church in sub_churches]),
-                    'arrival_time': int(time.mktime(t)),
-                    'language':     'en',
-                    'mode':         'DRIVING',
-                    'units':        'imperial',
-                    'key':          api_key,
-                }
-                resp = requests.get(url, params=params)
-                if resp.status_code == 200:
-                    print(resp.text)
+            church_groups = math.ceil(len(churches) / c)
+            family_groups = math.ceil(len(families) / f)
 
-                    result = json.loads(resp.text)
-                    save_trip_times(cur, t, sub_churches, sub_families, result)
-                else:
-                    raise Exception(f"Driving time failed")
+            for i in range(0, church_groups):
+                sub_churches = churches[i*c : i*c + c]
+                for j in range(0, family_groups):
+                    sub_families = families[j*f : j*f + f]
+
+                    params = {
+                        'origins':      '|'.join([f"place_id:{family['place_id']}" for family in sub_families]),
+                        'destinations': '|'.join([f"place_id:{church['place_id']}" for church in sub_churches]),
+                        'arrival_time': int(time.mktime(t)),
+                        'language':     'en',
+                        'mode':         'DRIVING',
+                        'units':        'imperial',
+                        'key':          api_key,
+                    }
+                    resp = requests.get(url, params=params)
+                    if resp.status_code == 200:
+                        print(resp.text)
+
+                        result = json.loads(resp.text)
+                        save_trip_times(cur, t, sub_churches, sub_families, result)
+                    else:
+                        raise Exception(f"Driving time failed")
     conn.commit()
