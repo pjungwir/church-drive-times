@@ -33,13 +33,17 @@ TODO
   + save trip times to database.
   - check for OK status
   - don't ask for families/churches we already know about, unless you pass a `force` option.
-  - fix minutes-vs-seconds for trip time: our db column is named minutes but Google gives us seconds.
+    - We already exclude already-known families/churches. (There might be a problem though since we got dupes before.)
+    - We should add a `force` option that overwrites the old values using `ON CONFLICT DO UPDATE`.
+  + fix minutes-vs-seconds for trip time: our db column is named minutes but Google gives us seconds.
   - write some tests?
-  - improve how the db stores day-of-week and time-of-day:
-    - store day-of-week as an integer?
-    - maybe just store a single column with a full timestamp, especially since that's what we ask Google for?
-      - I think I like this approach the best. The frontend can always treat it as a representative and just use dow and time.
+  + improve how the db stores day-of-week and time-of-day:
+    + store day-of-week as an integer?
+    + maybe just store a single column with a full timestamp, especially since that's what we ask Google for?
+      + I think I like this approach the best. The frontend can always treat it as a representative and just use dow and time.
 - Add an html table with driving time statistics for each church:
+  + don't show "null" for size or price
+  + add dollar sign & commas for price
   - mean driving time
   - median driving time
   - 5/10/90/95% driving time
