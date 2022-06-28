@@ -34,6 +34,10 @@
     <script>
       const churches = JSON.parse(document.getElementById("churches").text);
 
+      function nameAndAddress(ch) {
+        return [ch.name, ch.address].filter(x => x).join("<br>")
+      }
+
       function asCurrency(x) {
         if (x) {
           return '$' + x.toLocaleString();
@@ -45,8 +49,8 @@
       function drawTable() {
         const tbody = document.getElementById("churches-tbody");
         let trs = '';
-        for (const ch of churches) {
-          trs += "<tr><td>" + ch.address + "</td><td>" + (ch.size || '') + "</td><td>" + asCurrency(ch.price) + "</td></tr>";
+        for (const ch of churches.sort(ch => !ch.current)) {
+          trs += "<tr><td>" + nameAndAddress(ch) + "</td><td>" + (ch.size || '') + "</td><td>" + asCurrency(ch.price) + "</td></tr>";
         }
         tbody.innerHTML = trs;
       }

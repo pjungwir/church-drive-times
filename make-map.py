@@ -11,7 +11,7 @@ if database_url is None:
 
 with psycopg2.connect(database_url) as conn:
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-        cur.execute("SELECT address, size, price, longitude, latitude FROM churches WHERE longitude IS NOT NULL AND latitude IS NOT NULL")
+        cur.execute("SELECT name, address, size, price, longitude, latitude, current FROM churches WHERE longitude IS NOT NULL AND latitude IS NOT NULL")
         churches = [
             {
                 **ch,
