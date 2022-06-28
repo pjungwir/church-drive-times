@@ -34,11 +34,19 @@
     <script>
       const churches = JSON.parse(document.getElementById("churches").text);
 
+      function asCurrency(x) {
+        if (x) {
+          return '$' + x.toLocaleString();
+        } else {
+          return '';
+        }
+      }
+
       function drawTable() {
         const tbody = document.getElementById("churches-tbody");
         let trs = '';
         for (const ch of churches) {
-          trs += "<tr><td>" + ch.address + "</td><td>" + ch.size + "</td><td>" + ch.price + "</td></tr>";
+          trs += "<tr><td>" + ch.address + "</td><td>" + (ch.size || '') + "</td><td>" + asCurrency(ch.price) + "</td></tr>";
         }
         tbody.innerHTML = trs;
       }
