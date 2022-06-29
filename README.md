@@ -44,13 +44,11 @@ TODO
 - Add an html table with driving time statistics for each church:
   + don't show "null" for size or price
   + add dollar sign & commas for price
-  - mean driving time
-  - median driving time
-  - 5/10/90/95% driving time
+  + mean driving time
+  + 5/10/50/90/95% driving time
   - what percent are within 10/20/30 minutes?
-  - mean delta driving time (delta = change from your old driving time)
-  - median delta driving time
-  - 5/10/90/95% delta driving time
+  + mean delta driving time (delta = change from your old driving time)
+  + 5/10/50/90/95% delta driving time
   - what percent are no more than 10/20/30 minutes worse?
 - put it online with a password
 - let people type in a new church address

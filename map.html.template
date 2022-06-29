@@ -35,7 +35,7 @@
       const churches = JSON.parse(document.getElementById("churches").text);
 
       function nameAndAddress(ch) {
-        return [ch.name, ch.address].filter(x => x).join("<br>")
+        return [ch.name, ch.address].filter(x => x).join("\n")
       }
 
       function asCurrency(x) {
@@ -46,11 +46,36 @@
         }
       }
 
+      function addJitter(lonlat) {
+        const factor = 0.00001;
+        return {
+          lng: lonlat.lng * (1 + (Math.random() - 0.5) * factor),
+          lat: lonlat.lat * (1 + (Math.random() - 0.5) * factor),
+        }
+      }
+
+      function infoWindowContent(ch) {
+        return "<h4>" + nameAndAddress(ch).replaceAll("\n", "<br>") + "</h4>" +
+              "<table class='table'>" +
+                "<tr>" +
+                  "<th>Mean</th><td class='text-right'>" + (ch.mean_seconds / 60).toFixed(0) + " minutes</td>" +
+                "</tr><tr>" +
+                  "<th>Median</th><td class='text-right'>" + (ch.seconds_percents[0] / 60).toFixed(0) + " minutes</td>" +
+                "</tr><tr>" +
+                  "<th>90%</th><td class='text-right'>" + (ch.seconds_percents[1] / 60).toFixed(0) + " minutes</td>" +
+                "</tr><tr>" +
+                  "<th>95%</th><td class='text-right'>" + (ch.seconds_percents[2] / 60).toFixed(0) + " minutes</td>" +
+                "</tr><tr>" +
+                  "<th>Mean change</th><td class='text-right'>" + (ch.mean_delta_seconds / 60).toFixed(0) + " minutes</td>" +
+                "</tr>" +
+              "</table>";
+      }
+
       function drawTable() {
         const tbody = document.getElementById("churches-tbody");
         let trs = '';
         for (const ch of churches.sort(ch => !ch.current)) {
-          trs += "<tr><td>" + nameAndAddress(ch) + "</td><td>" + (ch.size || '') + "</td><td>" + asCurrency(ch.price) + "</td></tr>";
+          trs += "<tr><td>" + nameAndAddress(ch).replaceAll("\n", "<br>") + "</td><td>" + (ch.size || '') + "</td><td>" + asCurrency(ch.price) + "</td></tr>";
         }
         tbody.innerHTML = trs;
       }
@@ -63,10 +88,25 @@
           zoom: 10,
           center: stJohns,
         });
+        const infoWindow = new google.maps.InfoWindow({
+          content: "",
+        });
         for (const ch of churches) {
-          new google.maps.Marker({
-            position: { lng: ch.longitude, lat: ch.latitude },
+          const m = new google.maps.Marker({
+            // TODO: Instead of adding jitter,
+            // detect multiple pins at the same place and space out only those
+            // (around a small radius).
+            position: addJitter({ lng: ch.longitude, lat: ch.latitude }),
             map: map,
+            title: nameAndAddress(ch),
+          });
+          m.addListener("click", () => {
+            infoWindow.setContent(infoWindowContent(ch));
+            infoWindow.open({
+              anchor: m,
+              map,
+              shouldFocus: false,
+            });
           });
         }
       }
