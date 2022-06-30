@@ -8,7 +8,7 @@
     <style>
       #map {
         width: 100%;
-        height: 400px;
+        height: 600px;
       }
     </style>
     <script id="churches">{{churches}}</script>
@@ -20,9 +20,24 @@
       <table class="table">
         <thead>
           <tr>
+            <th></th>
+            <th class="text-center" colspan="4">Drive time (minutes)</th>
+            <th class="text-center" colspan="4">&Delta; drive time (minutes)</th>
+            <th></th>
+            <th></th>
+          </tr>
+          <tr>
             <th>Address</th>
-            <th>Size</th>
-            <th>Price</th>
+            <th class="text-end">Mean</th>
+            <th class="text-end">50%</th>
+            <th class="text-end">90%</th>
+            <th class="text-end">95%</th>
+            <th class="text-end">Mean</th>
+            <th class="text-end">50%</th>
+            <th class="text-end">90%</th>
+            <th class="text-end">95%</th>
+            <th class="text-end">Size</th>
+            <th class="text-end">Price</th>
           </tr>
         </thead>
         <tbody id="churches-tbody">
@@ -33,6 +48,7 @@
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&callback=initMap&v=weekly" defer></script>
     <script>
       const churches = JSON.parse(document.getElementById("churches").text);
+      const churchesById = churches.reduce((o, ch) => { o[ch.id] = ch; return o }, {});
 
       function nameAndAddress(ch) {
         return [ch.name, ch.address].filter(x => x).join("\n")
@@ -54,45 +70,106 @@
         }
       }
 
+      function pluralize(n, singular, plural) {
+        if (!plural) plural = singular + "s";
+        if (n == 1) return n + " " + singular;
+        else return n + " " + plural;
+      }
+
+      function highlightRow(ch) {
+        const tbody = document.getElementById("churches-tbody");
+        tbody.querySelectorAll("tr").forEach(tr => { tr.classList.remove("text-bg-primary"); });
+        const tr = document.getElementById("church-" + ch.id);
+        tr.classList.add("text-bg-primary");
+      }
+
+      function toMinutes(secs) {
+        return (secs / 60).toFixed(0);
+      }
+
       function infoWindowContent(ch) {
-        return "<h4>" + nameAndAddress(ch).replaceAll("\n", "<br>") + "</h4>" +
+        return "<h6>" + nameAndAddress(ch).replaceAll("\n", "<br>") + "</h6>" +
               "<table class='table'>" +
                 "<tr>" +
-                  "<th>Mean</th><td class='text-right'>" + (ch.mean_seconds / 60).toFixed(0) + " minutes</td>" +
+                  "<th>Mean drive</th>" +
+                  "<td class='text-end'>" + toMinutes(ch.mean_seconds) + "</td>" +
                 "</tr><tr>" +
-                  "<th>Median</th><td class='text-right'>" + (ch.seconds_percents[0] / 60).toFixed(0) + " minutes</td>" +
+                  "<th>50/90/95% drive</th>" +
+                  "<td class='text-end'>" +
+                    toMinutes(ch.seconds_percents[0]) + "/" +
+                    toMinutes(ch.seconds_percents[1]) + "/" +
+                    toMinutes(ch.seconds_percents[2]) +
+                  "</td>" +
                 "</tr><tr>" +
-                  "<th>90%</th><td class='text-right'>" + (ch.seconds_percents[1] / 60).toFixed(0) + " minutes</td>" +
+                  "<th>Mean change</th>" +
+                  "<td class='text-end'>" + toMinutes(ch.mean_delta_seconds) + "</td>" +
                 "</tr><tr>" +
-                  "<th>95%</th><td class='text-right'>" + (ch.seconds_percents[2] / 60).toFixed(0) + " minutes</td>" +
-                "</tr><tr>" +
-                  "<th>Mean change</th><td class='text-right'>" + (ch.mean_delta_seconds / 60).toFixed(0) + " minutes</td>" +
+                  "<th>50/90/95% change</th>" +
+                  "<td class='text-end'>" +
+                    toMinutes(ch.delta_seconds_percents[0]) + "/" +
+                    toMinutes(ch.delta_seconds_percents[1]) + "/" +
+                    toMinutes(ch.delta_seconds_percents[2]) +
+                  "</td>" +
                 "</tr>" +
-              "</table>";
+              "</table>" +
+              "<div class='text-muted'>* All times in minutes</div>";
+      }
+
+      function onClickRow(event) {
+        console.log("We got clicked!", event);
+        const tr = event.target.closest('tr');
+        const churchId = parseInt(tr.id.substring(7));    // cut off the prefix of "church-12"
+        const ch = churchesById[churchId];
+        showPopup(ch);
       }
 
       function drawTable() {
         const tbody = document.getElementById("churches-tbody");
         let trs = '';
         for (const ch of churches.sort(ch => !ch.current)) {
-          trs += "<tr><td>" + nameAndAddress(ch).replaceAll("\n", "<br>") + "</td><td>" + (ch.size || '') + "</td><td>" + asCurrency(ch.price) + "</td></tr>";
+          trs += (
+            "<tr id='church-" + ch.id + "'>" +
+              "<td><a style='cursor:pointer' onclick='onClickRow(event)'>" + nameAndAddress(ch).replaceAll("\n", "<br>") + "</a></td>" +
+              "<td class='text-end'>" + toMinutes(ch.mean_seconds) + "</td>" +
+              "<td class='text-end'>" + toMinutes(ch.seconds_percents[0]) + "</td>" +
+              "<td class='text-end'>" + toMinutes(ch.seconds_percents[1]) + "</td>" +
+              "<td class='text-end'>" + toMinutes(ch.seconds_percents[2]) + "</td>" +
+              "<td class='text-end'>" + toMinutes(ch.mean_delta_seconds) + "</td>" +
+              "<td class='text-end'>" + toMinutes(ch.delta_seconds_percents[0]) + "</td>" +
+              "<td class='text-end'>" + toMinutes(ch.delta_seconds_percents[1]) + "</td>" +
+              "<td class='text-end'>" + toMinutes(ch.delta_seconds_percents[2]) + "</td>" +
+              "<td class='text-end'>" + (ch.size || '') + "</td>" +
+              "<td class='text-end'>" + asCurrency(ch.price) + "</td>" +
+            "</tr>");
         }
         tbody.innerHTML = trs;
       }
       drawTable();
 
+      let map = null;
+      let infoWindow = null;
       const stJohns = { lng: -122.82605, lat: 45.51339 };
 
+      function showPopup(ch) {
+        highlightRow(ch);
+        infoWindow.setContent(infoWindowContent(ch));
+        infoWindow.open({
+          anchor: ch.marker,
+          map,
+          shouldFocus: false,
+        });
+      }
+
       function initMap() {
-        const map = new google.maps.Map(document.getElementById("map"), {
+        map = new google.maps.Map(document.getElementById("map"), {
           zoom: 10,
           center: stJohns,
         });
-        const infoWindow = new google.maps.InfoWindow({
+        infoWindow = new google.maps.InfoWindow({
           content: "",
         });
         for (const ch of churches) {
-          const m = new google.maps.Marker({
+          ch.marker = new google.maps.Marker({
             // TODO: Instead of adding jitter,
             // detect multiple pins at the same place and space out only those
             // (around a small radius).
@@ -100,14 +177,7 @@
             map: map,
             title: nameAndAddress(ch),
           });
-          m.addListener("click", () => {
-            infoWindow.setContent(infoWindowContent(ch));
-            infoWindow.open({
-              anchor: m,
-              map,
-              shouldFocus: false,
-            });
-          });
+          ch.marker.addListener("click", () => { showPopup(ch) });
         }
       }
       window.initMap = initMap;

@@ -50,8 +50,14 @@ TODO
   + mean delta driving time (delta = change from your old driving time)
   + 5/10/50/90/95% delta driving time
   - what percent are no more than 10/20/30 minutes worse?
+  - csv download
 - put it online with a password
 - let people type in a new church address
-- click on a marker to:
-  - show the name/address/size/price
-  - highlight the table row
+  - geocode it, compute times
+  - save it to the database so others can see?
+- click on a church row (or maybe just the name/address) to popup its marker
+- let people type in their own address and show their own drive time on the table & popup.
+- let people sort the table by any column
++ click on a marker to:
+  + show the name/address/size/price
+  + highlight the table row
