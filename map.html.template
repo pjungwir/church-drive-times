@@ -17,6 +17,11 @@
     <div class="container">
       <h1>Church Sites</h1>
       <div id="map"></div>
+      <div class="row">
+        <div class="col-12 mt-2 text-end">
+          <select id="arrivalTime" onchange="onChooseArrivalTime()"></select>
+        </div>
+      </div>
       <table class="table">
         <thead>
           <tr>
@@ -47,8 +52,52 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&callback=initMap&v=weekly" defer></script>
     <script>
-      const churches = JSON.parse(document.getElementById("churches").text);
-      const churchesById = churches.reduce((o, ch) => { o[ch.id] = ch; return o }, {});
+      const churchesAtAllTimes = JSON.parse(document.getElementById("churches").text);
+      const churchesByArrivalTime = churchesAtAllTimes.reduce((o, ch) => {
+        const t = ch['arrival_time'];
+        if (!o[t]) o[t] = [];
+        o[t].push(ch)
+        return o;
+      }, {});
+      let churches = null;
+      let churchesById = null;
+
+      function chooseArrivalTime(t) {
+        churches = churchesByArrivalTime[t];
+        console.log("churches for " + t, churches);
+        churchesById = churches.reduce((o, ch) => { o[ch.id] = ch; return o }, {});
+      }
+
+      function chooseInitialArrivalTime() {
+        // Take the first Sunday morning we find, or else the first of all:
+        for (const t of Object.keys(churchesByArrivalTime)) {
+          const t2 = new Date(Date.parse(t));
+          if (t2.getDay() === 0) return t;
+        }
+        return Object.keys(churchesByArrivalTime)[0];
+      }
+
+      function fillInArrivalTimeChooser() {
+        const chooser = document.getElementById("arrivalTime");
+        const options = [];
+        const format = new Intl.DateTimeFormat('default', {'weekday': 'short', 'hour': 'numeric', 'minute': 'numeric'});
+        for (const t of Object.keys(churchesByArrivalTime).sort(t => new Date(Date.parse(t)))) {
+          options.push("<option value='" + t + "'>" + format.format(new Date(Date.parse(t))) + "</option>");
+        }
+        chooser.innerHTML = options.join("\n");
+      }
+
+      fillInArrivalTimeChooser();
+      // Start out with Sunday morning:
+      chooseArrivalTime(chooseInitialArrivalTime());
+
+      function onChooseArrivalTime() {
+        console.log("onChooseArrivalTime");
+        const chooser = document.getElementById("arrivalTime");
+        chooseArrivalTime(chooser.value);
+        drawTable();
+      }
+
 
       function nameAndAddress(ch) {
         return [ch.name, ch.address].filter(x => x).join("\n")
@@ -84,7 +133,7 @@
       }
 
       function toMinutes(secs) {
-        return (secs / 60).toFixed(0);
+        return Math.round(secs / 60).toString();
       }
 
       function infoWindowContent(ch) {
@@ -126,7 +175,7 @@
       function drawTable() {
         const tbody = document.getElementById("churches-tbody");
         let trs = '';
-        for (const ch of churches.sort(ch => !ch.current)) {
+        for (const ch of churches.sort((a, b) => (b.current - a.current) || (a.seconds_percents[0] - b.seconds_percents[0]))) {
           trs += (
             "<tr id='church-" + ch.id + "'>" +
               "<td><a style='cursor:pointer' onclick='onClickRow(event)'>" + nameAndAddress(ch).replaceAll("\n", "<br>") + "</a></td>" +

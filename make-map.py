@@ -12,30 +12,31 @@ if database_url is None:
 with psycopg2.connect(database_url) as conn:
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
         cur.execute("""
-SELECT  ch.id, ch.name, ch.address, ch.size, ch.price, ch.longitude, ch.latitude, ch.current,
+SELECT  t.arrival_time, ch.id, ch.name, ch.address, ch.size, ch.price, ch.longitude, ch.latitude, ch.current,
         count(DISTINCT t.family_id) AS number_of_known_trip_times,
         avg(t.seconds) AS mean_seconds,
         percentile_cont(ARRAY[0.50, 0.90, 0.95]) WITHIN GROUP (ORDER BY t.seconds) AS seconds_percents,
         avg(t.seconds - st_johns.seconds) AS mean_delta_seconds,
         percentile_cont(ARRAY[0.50, 0.90, 0.95]) WITHIN GROUP (ORDER BY t.seconds - st_johns.seconds) AS delta_seconds_percents
 FROM    churches ch
-LEFT OUTER JOIN trips t ON t.church_id = ch.id AND t.arrival_time = 'June 19, 2022 10:00 PDT'
+LEFT OUTER JOIN trips t ON t.church_id = ch.id
 LEFT OUTER JOIN (
   -- Get each family's trip to St. Johns for comparison:
-  SELECT  t.family_id, t.seconds
+  SELECT  t.arrival_time, t.family_id, t.seconds
   FROM    churches ch
-  JOIN    trips t ON t.church_id = ch.id AND t.arrival_time = 'June 19, 2022 10:00 PDT'
+  JOIN    trips t ON t.church_id = ch.id
   WHERE   ch.current
-) AS st_johns ON t.family_id = st_johns.family_id
+) AS st_johns ON t.family_id = st_johns.family_id AND t.arrival_time = st_johns.arrival_time
 WHERE   ch.longitude IS NOT NULL AND ch.latitude IS NOT NULL
-GROUP BY ch.id
-ORDER BY mean_seconds DESC
+GROUP BY t.arrival_time, ch.id
+ORDER BY t.arrival_time, mean_seconds DESC
         """)
 
         churches = [
             {
                 **ch,
                 'price': (float(ch['price']) if ch['price'] is not None else None),
+				'arrival_time': ch['arrival_time'].strftime("%Y-%m-%dT%H:%M:%S%z"),
             }
             for ch
             in cur.fetchall()

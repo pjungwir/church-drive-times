@@ -51,6 +51,21 @@ TODO
   + 5/10/50/90/95% delta driving time
   - what percent are no more than 10/20/30 minutes worse?
   - csv download
+  - show different arrival times (Sun morning, Sat evening, etc)
+    + the numbers don't change. Isn't that fishy?
+      + (It was because we needed to ask Google about a destination_time not an arrival_time, then use duration_in_traffic not duration.)
+    + the dropdown should show Sunday morning at the beginning to match the table.
+    + align it right not left
+  - add 80%....
+  - change `arrival_time` to `departure_time` in the database and elsewhere since that's what we have to ask Google
+  + Why does one of the churches have a "-0" median change in drive time for Friday 7 p.m.? Don't show "-0".
+    + Probably it's because the real value is in seconds and barely negative, and when we diving by 60 we get -0.
+    + James and I can talk about floating point numbers!!!
+  - If a popup is open and you change the departure time, then the popup doesn't get refreshed.
+  - If the popup for another church is already open, and you click a table row for a different church,
+    and that pin is off the map (or maybe even just close to an edge),
+    then the new church's popup doesn't point to the pin. That is a bug! It should point to the pin.
+    
 - put it online with a password
 - let people type in a new church address
   - geocode it, compute times

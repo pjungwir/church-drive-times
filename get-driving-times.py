@@ -96,6 +96,9 @@ def save_trip_times(cur, t, churches, families, result):
                       "text" : "13 mins",
                       "value" : 808
                    },
+                   "duration_in_traffic" : {
+                      "text" : "13 mins",
+                      "value" : 808
                    "status" : "OK"
                 },
                 ...
@@ -106,6 +109,9 @@ def save_trip_times(cur, t, churches, families, result):
 
     Each origin (i.e. family) has its own row.
     Each destination (i.e. church) has one element per row.
+
+    Note that each (origin, destination) pair has both a "duration" value and a "duration_in_traffic" value.
+    Only the "duration_in_traffic" value changes based on "departure_time", so we should use that one.
     """
     for i in range(0, len(families)):
         f = families[i]
@@ -113,12 +119,21 @@ def save_trip_times(cur, t, churches, families, result):
             ch = churches[j]
             el = result['rows'][i]['elements'][j]
 
+            # There is *one address* where Google omits duration_in_traffic (grrr....),
+            # I suppose maybe because the route goes through places where Google has no traffic data,
+            # so in that case we should fall back to the regular duration value.
+            duration = el.get('duration_in_traffic', None)
+            if duration is None:
+                duration = el['duration']
+            duration = duration['value']
+
             # TODO: Make sure the status is OK.
             cur.execute("INSERT INTO trips (family_id, church_id, arrival_time, seconds) VALUES (%s, %s, %s, %s)",
-                (f['id'], ch['id'], time.strftime("%Y-%m-%d %H:%M:%S %Z", t), el['duration']['value']))
+                (f['id'], ch['id'], time.strftime("%Y-%m-%d %H:%M:%S %Z", t), duration))
 
 def get_trip_times(cur, arrival_time):
     t = time.strptime(arrival_time, "%B %d, %Y %H:%M %Z")
+    print(f"Getting trip times for {arrival_time} = {t} = {int(time.mktime(t))}")
 
     # Get all families that are missing a time for any church:
     # all families except those that have times for all churches.
@@ -169,7 +184,11 @@ def get_trip_times(cur, arrival_time):
             params = {
                 'origins':      '|'.join([f"place_id:{family['place_id']}" for family in sub_families]),
                 'destinations': '|'.join([f"place_id:{church['place_id']}" for church in sub_churches]),
-                'arrival_time': int(time.mktime(t)),
+                # It would be nicer to ask about arrival_time instead of departure_time,
+                # but Google only supports arrival_time for transit queries (i.e. bus, subway, etc.), not driving.
+                # Since we're making a driving query, arrival_time is ignored
+                # and we would just get average answers that are the same for every time.
+                'departure_time': int(time.mktime(t)),
                 'language':     'en',
                 'mode':         'DRIVING',
                 'units':        'imperial',
@@ -188,6 +207,11 @@ if __name__ == '__main__':
     with psycopg2.connect(database_url) as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
             # Sunday morning, Saturday vespers, Friday evening:
-            for arrival_time in ["June 19, 2022 10:00 PDT", "July 2, 2022 18:30 PDT", "July 1, 2022 19:00 PDT"]:
+            # for arrival_time in ["June 19, 2022 10:00 PDT", "July 2, 2022 18:30 PDT", "July 1, 2022 19:00 PDT"]:
+            # TODO: Google actually only uses traffic predictions for times in the future.
+            # So if we run this after the dates below, we'll keep wrong results
+            # (and they will be the same for all departure times).
+            # So we should actually generate these dates dynamically based on when you run the program.
+            for arrival_time in ["July 17, 2022 10:00 PDT", "July 16, 2022 18:30 PDT", "July 15, 2022 19:00 PDT"]:
                 get_trip_times(cur, arrival_time)
         conn.commit()
