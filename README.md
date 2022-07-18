@@ -57,7 +57,7 @@ TODO
     + the dropdown should show Sunday morning at the beginning to match the table.
     + align it right not left
   - add 80%....
-  - change `arrival_time` to `departure_time` in the database and elsewhere since that's what we have to ask Google
+  + change `arrival_time` to `departure_time` in the database and elsewhere since that's what we have to ask Google
   + Why does one of the churches have a "-0" median change in drive time for Friday 7 p.m.? Don't show "-0".
     + Probably it's because the real value is in seconds and barely negative, and when we diving by 60 we get -0.
     + James and I can talk about floating point numbers!!!

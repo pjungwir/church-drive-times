@@ -54,7 +54,7 @@
     <script>
       const churchesAtAllTimes = JSON.parse(document.getElementById("churches").text);
       const churchesByArrivalTime = churchesAtAllTimes.reduce((o, ch) => {
-        const t = ch['arrival_time'];
+        const t = ch['departure_time'];
         if (!o[t]) o[t] = [];
         o[t].push(ch)
         return o;

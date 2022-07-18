@@ -128,12 +128,12 @@ def save_trip_times(cur, t, churches, families, result):
             duration = duration['value']
 
             # TODO: Make sure the status is OK.
-            cur.execute("INSERT INTO trips (family_id, church_id, arrival_time, seconds) VALUES (%s, %s, %s, %s)",
+            cur.execute("INSERT INTO trips (family_id, church_id, departure_time, seconds) VALUES (%s, %s, %s, %s)",
                 (f['id'], ch['id'], time.strftime("%Y-%m-%d %H:%M:%S %Z", t), duration))
 
-def get_trip_times(cur, arrival_time):
-    t = time.strptime(arrival_time, "%B %d, %Y %H:%M %Z")
-    print(f"Getting trip times for {arrival_time} = {t} = {int(time.mktime(t))}")
+def get_trip_times(cur, departure_time):
+    t = time.strptime(departure_time, "%B %d, %Y %H:%M %Z")
+    print(f"Getting trip times for {departure_time} = {t} = {int(time.mktime(t))}")
 
     # Get all families that are missing a time for any church:
     # all families except those that have times for all churches.
@@ -144,11 +144,11 @@ def get_trip_times(cur, arrival_time):
       LEFT OUTER JOIN trips t
       ON      t.church_id = ch.id
       AND     t.family_id = f.id
-      AND     t.arrival_time = %s
+      AND     t.departure_time = %s
       WHERE   f.place_id IS NOT NULL
       AND     ch.place_id IS NOT NULL
       AND     t.church_id IS NULL
-    """, (arrival_time,))
+    """, (departure_time,))
     families = cur.fetchall()
     # Get all churches that are missing a time for any family:
     cur.execute("""
@@ -158,15 +158,15 @@ def get_trip_times(cur, arrival_time):
       LEFT OUTER JOIN trips t
       ON      t.church_id = ch.id
       AND     t.family_id = f.id
-      AND     t.arrival_time = %s
+      AND     t.departure_time = %s
       WHERE   ch.place_id IS NOT NULL
       AND     f.place_id IS NOT NULL
       AND     t.family_id IS NULL
-    """, (arrival_time,))
+    """, (departure_time,))
     churches = cur.fetchall()
 
     if len(churches) == 0 or len(families) == 0:
-        print(f"No churches or families need to timing for {arrival_time}. Skipping....")
+        print(f"No churches or families need to timing for {departure_time}. Skipping....")
         return
 
     # Choose the optimal number of churches & families to query at a time,
@@ -207,11 +207,11 @@ if __name__ == '__main__':
     with psycopg2.connect(database_url) as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
             # Sunday morning, Saturday vespers, Friday evening:
-            # for arrival_time in ["June 19, 2022 10:00 PDT", "July 2, 2022 18:30 PDT", "July 1, 2022 19:00 PDT"]:
+            # for departure_time in ["June 19, 2022 10:00 PDT", "July 2, 2022 18:30 PDT", "July 1, 2022 19:00 PDT"]:
             # TODO: Google actually only uses traffic predictions for times in the future.
             # So if we run this after the dates below, we'll keep wrong results
             # (and they will be the same for all departure times).
             # So we should actually generate these dates dynamically based on when you run the program.
-            for arrival_time in ["July 17, 2022 10:00 PDT", "July 16, 2022 18:30 PDT", "July 15, 2022 19:00 PDT"]:
-                get_trip_times(cur, arrival_time)
+            for departure_time in ["July 17, 2022 10:00 PDT", "July 16, 2022 18:30 PDT", "July 15, 2022 19:00 PDT"]:
+                get_trip_times(cur, departure_time)
         conn.commit()
