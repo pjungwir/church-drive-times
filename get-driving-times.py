@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.8
+#!/usr/bin/env python3.9
 
 import psycopg2
 import psycopg2.extras
@@ -6,6 +6,8 @@ import requests
 import json
 import os
 import time
+import datetime
+import zoneinfo
 import math
 
 api_key = os.environ.get("GOOGLE_MAPS_API_KEY", None)
@@ -79,7 +81,7 @@ def choose_best_churches_per_call(big_c, big_f, max_dimension=25, max_elements=1
     print(f"best_N={best_N}")
     return (best_c, best_f)
     
-def save_trip_times(cur, t, churches, families, result):
+def save_trip_times(cur, departure_time, churches, families, result):
     """Parses a response from Google and saves it to the database.
 
     Google gives a result like this:
@@ -129,11 +131,11 @@ def save_trip_times(cur, t, churches, families, result):
 
             # TODO: Make sure the status is OK.
             cur.execute("INSERT INTO trips (family_id, church_id, departure_time, seconds) VALUES (%s, %s, %s, %s)",
-                (f['id'], ch['id'], time.strftime("%Y-%m-%d %H:%M:%S %Z", t), duration))
+                (f['id'], ch['id'], departure_time.strftime("%Y-%m-%d %H:%M:%S %Z"), duration))
 
 def get_trip_times(cur, departure_time):
-    t = time.strptime(departure_time, "%B %d, %Y %H:%M %Z")
-    print(f"Getting trip times for {departure_time} = {t} = {int(time.mktime(t))}")
+    departure_time_str = departure_time.strftime("%B %d, %Y %H:%M %Z")
+    print(f"Getting trip times for {departure_time_str} = = {int(time.mktime(departure_time.timetuple()))}")
 
     # Get all families that are missing a time for any church:
     # all families except those that have times for all churches.
@@ -148,7 +150,7 @@ def get_trip_times(cur, departure_time):
       WHERE   f.place_id IS NOT NULL
       AND     ch.place_id IS NOT NULL
       AND     t.church_id IS NULL
-    """, (departure_time,))
+    """, (departure_time_str,))
     families = cur.fetchall()
     # Get all churches that are missing a time for any family:
     cur.execute("""
@@ -162,11 +164,11 @@ def get_trip_times(cur, departure_time):
       WHERE   ch.place_id IS NOT NULL
       AND     f.place_id IS NOT NULL
       AND     t.family_id IS NULL
-    """, (departure_time,))
+    """, (departure_time_str,))
     churches = cur.fetchall()
 
     if len(churches) == 0 or len(families) == 0:
-        print(f"No churches or families need to timing for {departure_time}. Skipping....")
+        print(f"No churches or families need to timing for {departure_time_str}. Skipping....")
         return
 
     # Choose the optimal number of churches & families to query at a time,
@@ -188,7 +190,7 @@ def get_trip_times(cur, departure_time):
                 # but Google only supports arrival_time for transit queries (i.e. bus, subway, etc.), not driving.
                 # Since we're making a driving query, arrival_time is ignored
                 # and we would just get average answers that are the same for every time.
-                'departure_time': int(time.mktime(t)),
+                'departure_time': int(time.mktime(departure_time.timetuple())),
                 'language':     'en',
                 'mode':         'DRIVING',
                 'units':        'imperial',
@@ -199,9 +201,20 @@ def get_trip_times(cur, departure_time):
                 print(resp.text)
 
                 result = json.loads(resp.text)
-                save_trip_times(cur, t, sub_churches, sub_families, result)
+                save_trip_times(cur, departure_time, sub_churches, sub_families, result)
             else:
                 raise Exception(f"Driving time failed")
+
+def get_next_departure_time(dow, hours, minutes):
+    """Given a day of week and time of day, get the next date when that happens.
+
+    We need this because Google only gives traffic times for future dates.
+    """
+    now = datetime.datetime.now(zoneinfo.ZoneInfo("America/Los_Angeles"))
+    days_to_add = datetime.timedelta(days=((dow - now.weekday()) % 7))
+    t = now + days_to_add
+    return datetime.datetime.combine(t.date(), datetime.time(hour=hours, minute=minutes))
+
 
 if __name__ == '__main__':
     with psycopg2.connect(database_url) as conn:
@@ -212,6 +225,7 @@ if __name__ == '__main__':
             # So if we run this after the dates below, we'll keep wrong results
             # (and they will be the same for all departure times).
             # So we should actually generate these dates dynamically based on when you run the program.
-            for departure_time in ["July 17, 2022 10:00 PDT", "July 16, 2022 18:30 PDT", "July 15, 2022 19:00 PDT"]:
-                get_trip_times(cur, departure_time)
+            for departure_time in [(6, 9, 30), (5, 18, 0), (4, 18, 30)]:
+                t = get_next_departure_time(*departure_time)
+                get_trip_times(cur, t)
         conn.commit()
