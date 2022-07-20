@@ -61,7 +61,7 @@ TODO
   + Why does one of the churches have a "-0" median change in drive time for Friday 7 p.m.? Don't show "-0".
     + Probably it's because the real value is in seconds and barely negative, and when we diving by 60 we get -0.
     + James and I can talk about floating point numbers!!!
-  - If a popup is open and you change the departure time, then the popup doesn't get refreshed.
+  + If a popup is open and you change the departure time, then the popup doesn't get refreshed.
   - If the popup for another church is already open, and you click a table row for a different church,
     and that pin is off the map (or maybe even just close to an edge),
     then the new church's popup doesn't point to the pin. That is a bug! It should point to the pin.

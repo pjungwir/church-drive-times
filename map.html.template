@@ -96,6 +96,10 @@
         const chooser = document.getElementById("arrivalTime");
         chooseArrivalTime(chooser.value);
         drawTable();
+        if (currentChurch) {
+          const ch = churchesById[currentChurch.id];
+          setCurrentChurch(ch);
+        }
       }
 
 
@@ -198,10 +202,16 @@
       let map = null;
       let infoWindow = null;
       const stJohns = { lng: -122.82605, lat: 45.51339 };
+      let currentChurch = null;
 
-      function showPopup(ch) {
+      function setCurrentChurch(ch) {
+        currentChurch = ch;
         highlightRow(ch);
         infoWindow.setContent(infoWindowContent(ch));
+      }
+
+      function showPopup(ch) {
+        setCurrentChurch(ch);
         infoWindow.open({
           anchor: ch.marker,
           map,
