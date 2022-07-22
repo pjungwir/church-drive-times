@@ -9,4 +9,7 @@ families.csv: families.csv.cpt .env
 families.csv.cpt:
 	source .env && export ENCRYPTION_KEY && ccrypt -E ENCRYPTION_KEY -e < families.csv > $@
 
-.PHONY: families.csv.cpt
+upload: map.html
+	scp map.html ic:/var/www/ic/church-sites/
+
+.PHONY: families.csv.cpt upload
