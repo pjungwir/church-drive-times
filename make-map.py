@@ -15,9 +15,9 @@ with psycopg2.connect(database_url) as conn:
 SELECT  t.departure_time, ch.id, ch.name, ch.address, ch.size, ch.price, ch.longitude, ch.latitude, ch.current,
         count(DISTINCT t.family_id) AS number_of_known_trip_times,
         avg(t.seconds) AS mean_seconds,
-        percentile_cont(ARRAY[0.50, 0.90, 0.95]) WITHIN GROUP (ORDER BY t.seconds) AS seconds_percents,
+        percentile_cont(ARRAY[0.50, 0.80, 0.90, 0.95]) WITHIN GROUP (ORDER BY t.seconds) AS seconds_percents,
         avg(t.seconds - st_johns.seconds) AS mean_delta_seconds,
-        percentile_cont(ARRAY[0.50, 0.90, 0.95]) WITHIN GROUP (ORDER BY t.seconds - st_johns.seconds) AS delta_seconds_percents
+        percentile_cont(ARRAY[0.50, 0.80, 0.90, 0.95]) WITHIN GROUP (ORDER BY t.seconds - st_johns.seconds) AS delta_seconds_percents
 FROM    churches ch
 LEFT OUTER JOIN trips t ON t.church_id = ch.id
 LEFT OUTER JOIN (

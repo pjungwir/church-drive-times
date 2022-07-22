@@ -26,8 +26,8 @@
         <thead>
           <tr>
             <th></th>
-            <th class="text-center" colspan="4">Drive time (minutes)</th>
-            <th class="text-center" colspan="4">&Delta; drive time (minutes)</th>
+            <th class="text-center" colspan="5">Drive time (minutes)</th>
+            <th class="text-center" colspan="5">&Delta; drive time (minutes)</th>
             <th></th>
             <th></th>
           </tr>
@@ -35,10 +35,12 @@
             <th>Address</th>
             <th class="text-end">Mean</th>
             <th class="text-end">50%</th>
+            <th class="text-end">80%</th>
             <th class="text-end">90%</th>
             <th class="text-end">95%</th>
             <th class="text-end">Mean</th>
             <th class="text-end">50%</th>
+            <th class="text-end">80%</th>
             <th class="text-end">90%</th>
             <th class="text-end">95%</th>
             <th class="text-end">Size</th>
@@ -50,7 +52,7 @@
       </table>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&callback=initMap&v=weekly" defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDVLAxDZa_02JksRkzQQrfVz-9U2q7GWeg&callback=initMap&v=weekly" defer></script>
     <script>
       const churchesAtAllTimes = JSON.parse(document.getElementById("churches").text);
       const churchesByArrivalTime = churchesAtAllTimes.reduce((o, ch) => {
@@ -147,21 +149,23 @@
                   "<th>Mean drive</th>" +
                   "<td class='text-end'>" + toMinutes(ch.mean_seconds) + "</td>" +
                 "</tr><tr>" +
-                  "<th>50/90/95% drive</th>" +
+                  "<th>50/80/90/95% drive</th>" +
                   "<td class='text-end'>" +
                     toMinutes(ch.seconds_percents[0]) + "/" +
                     toMinutes(ch.seconds_percents[1]) + "/" +
-                    toMinutes(ch.seconds_percents[2]) +
+                    toMinutes(ch.seconds_percents[2]) + "/" +
+                    toMinutes(ch.seconds_percents[3]) +
                   "</td>" +
                 "</tr><tr>" +
                   "<th>Mean change</th>" +
                   "<td class='text-end'>" + toMinutes(ch.mean_delta_seconds) + "</td>" +
                 "</tr><tr>" +
-                  "<th>50/90/95% change</th>" +
+                  "<th>50/80/90/95% change</th>" +
                   "<td class='text-end'>" +
                     toMinutes(ch.delta_seconds_percents[0]) + "/" +
                     toMinutes(ch.delta_seconds_percents[1]) + "/" +
-                    toMinutes(ch.delta_seconds_percents[2]) +
+                    toMinutes(ch.delta_seconds_percents[2]) + "/" +
+                    toMinutes(ch.delta_seconds_percents[3]) +
                   "</td>" +
                 "</tr>" +
               "</table>" +
@@ -187,10 +191,12 @@
               "<td class='text-end'>" + toMinutes(ch.seconds_percents[0]) + "</td>" +
               "<td class='text-end'>" + toMinutes(ch.seconds_percents[1]) + "</td>" +
               "<td class='text-end'>" + toMinutes(ch.seconds_percents[2]) + "</td>" +
+              "<td class='text-end'>" + toMinutes(ch.seconds_percents[3]) + "</td>" +
               "<td class='text-end'>" + toMinutes(ch.mean_delta_seconds) + "</td>" +
               "<td class='text-end'>" + toMinutes(ch.delta_seconds_percents[0]) + "</td>" +
               "<td class='text-end'>" + toMinutes(ch.delta_seconds_percents[1]) + "</td>" +
               "<td class='text-end'>" + toMinutes(ch.delta_seconds_percents[2]) + "</td>" +
+              "<td class='text-end'>" + toMinutes(ch.delta_seconds_percents[3]) + "</td>" +
               "<td class='text-end'>" + (ch.size || '') + "</td>" +
               "<td class='text-end'>" + asCurrency(ch.price) + "</td>" +
             "</tr>");
