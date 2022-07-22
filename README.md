@@ -46,10 +46,10 @@ TODO
   + add dollar sign & commas for price
   + mean driving time
   + 5/10/50/90/95% driving time
-  - what percent are within 10/20/30 minutes?
+  - what percent are within 20/30/40 minutes?
   + mean delta driving time (delta = change from your old driving time)
   + 5/10/50/90/95% delta driving time
-  - what percent are no more than 10/20/30 minutes worse?
+  - what percent are no more than 20/30/40 minutes worse?
   - csv download
   - show different arrival times (Sun morning, Sat evening, etc)
     + the numbers don't change. Isn't that fishy?

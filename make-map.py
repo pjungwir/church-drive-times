@@ -9,6 +9,10 @@ database_url = os.environ.get("DATABASE_URL", None)
 if database_url is None:
     raise Exception("DATABASE_URL envvar must be set")
 
+maps_api_key = os.environ.get("GOOGLE_MAPS_JAVASCRIPT_API_KEY", None)
+if maps_api_key is None:
+    raise Exception("GOOGLE_MAPS_JAVASCRIPT_API_KEY envvar must be set")
+
 with psycopg2.connect(database_url) as conn:
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
         cur.execute("""
@@ -46,6 +50,8 @@ ORDER BY t.departure_time, mean_seconds DESC
         with open("map.html.template") as f:
             template = f.read()
 
-        html = template.replace("{{churches}}", json.dumps(churches))
+        html = template
+        html = html.replace("{{churches}}", json.dumps(churches))
+        html = html.replace("{{google_maps_api_key}}", maps_api_key)
 
         print(html)
