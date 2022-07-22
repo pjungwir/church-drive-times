@@ -134,8 +134,10 @@
       function highlightRow(ch) {
         const tbody = document.getElementById("churches-tbody");
         tbody.querySelectorAll("tr").forEach(tr => { tr.classList.remove("text-bg-primary"); });
-        const tr = document.getElementById("church-" + ch.id);
-        tr.classList.add("text-bg-primary");
+        if (ch) {
+          const tr = document.getElementById("church-" + ch.id);
+          tr.classList.add("text-bg-primary");
+        }
       }
 
       function toMinutes(secs) {
@@ -213,7 +215,7 @@
       function setCurrentChurch(ch) {
         currentChurch = ch;
         highlightRow(ch);
-        infoWindow.setContent(infoWindowContent(ch));
+        if (ch) infoWindow.setContent(infoWindowContent(ch));
       }
 
       function showPopup(ch) {
@@ -225,6 +227,10 @@
         });
       }
 
+      function onInfoWindowClose(event) {
+        setCurrentChurch(null);
+      }
+
       function initMap() {
         map = new google.maps.Map(document.getElementById("map"), {
           zoom: 10,
@@ -233,6 +239,7 @@
         infoWindow = new google.maps.InfoWindow({
           content: "",
         });
+        infoWindow.addListener('closeclick', onInfoWindowClose);
         for (const ch of churches) {
           ch.marker = new google.maps.Marker({
             // TODO: Instead of adding jitter,

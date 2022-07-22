@@ -65,6 +65,7 @@ TODO
   - If the popup for another church is already open, and you click a table row for a different church,
     and that pin is off the map (or maybe even just close to an edge),
     then the new church's popup doesn't point to the pin. That is a bug! It should point to the pin.
+  + If you click a pin to open a popup and highlight a table row, then you close the popup, the table row should unhighlight.
     
 + put it online with a password
 - let people type in a new church address
